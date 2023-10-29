@@ -1,5 +1,7 @@
 import random
 
+from enum import Enum
+
 from typing import List
 
 from gym.envs.registration import register
@@ -11,9 +13,56 @@ class CubaLibreEnv:                 #{{{ TODO:
         self.action_space = spaces.Discrete(2)  # 0: Move to discard, 1: Reveal new card
         self.observation_space = spaces.Discrete(len(self.deck) + 1)  # Number of cards + 1 for the discard pile
 
+        # Initialize game board
+        self.game_board = self.initialize_board()
+
         # Initialize game state
-        self.reset()            
+        #self.reset()
     #}}}
+
+    def initialize_board(self):
+        board = []
+
+        #STANDARD DEPLOYMENT GAME
+        #Provinces
+        board.append(GameSpace("Pinar del Rio" , "Prov", terrain="forest"   , pop_val=1, sup=2 , ctrl="syn", pieces={  #{{{
+            "syn": {
+                "guerrillas": [0],
+                "bases": [1]
+            }
+        }))                                                                                                            #}}}
+        board.append(GameSpace("La Habana"     , "Prov", terrain="grass"    , pop_val=1, sup=1 , ctrl=None , pieces={  #{{{
+            "jul": {
+                "guerrillas": [1],
+                "bases": [0]
+            }
+        }))                                                                                                            #}}}
+        board.append(GameSpace("Matanzas"      , "Prov", terrain="grass"    , pop_val=1, sup=-1, ctrl=None))                                                                                                            #}}}
+        board.append(GameSpace("Las Villas"    , "Prov", terrain="mountain" , pop_val=2, sup=0 , ctrl="gov", pieces = { #{{{
+        #TODO:START FILLING STARTING PIECES OUT	
+		}))                                                                                                             #}}}
+        board.append(GameSpace("Camaguey"      , "Prov", terrain="forest"   , pop_val=1, sup=-1, ctrl="dir", pieces = { #{{{
+	
+		}))                                                                                                             #}}}
+        board.append(GameSpace("Oriente"       , "Prov", terrain="forest"   , pop_val=2, sup=-1, ctrl=None, pieces = {  #{{{
+	
+		}))                                                                                                             #}}}
+        board.append(GameSpace("Sierra Maestra", "Prov", terrain="mountain" , pop_val=1, sup=-2, ctrl="jul", pieces = { #{{{
+	
+		}))                                                                                                             #}}}
+
+        #Cities
+        board.append(GameSpace("Havana"           , "City", terrain="city"  , pop_val=6, sup=2, ctrl="gov", pieces = {  #{{{
+	
+		}))                                                                                                             #}}}
+        board.append(GameSpace("Camaguey"         , "City", terrain="city"  , pop_val=1, sup=1, ctrl="gov", pieces = {  #{{{
+	
+		}))                                                                                                             #}}}
+        board.append(GameSpace("Santiago Del Cuba", "City", terrain="city"  , pop_val=1, sup=0, ctrl="gov", pieces = {  #{{{
+	
+		}))                                                                                                             #}}}
+
+        return board
 
     def reset(self):                #{{{ TODO:
         """Reset the game to its initial state."""
@@ -83,45 +132,99 @@ class CubaLibreEnv:                 #{{{ TODO:
     )
 #}}}
 
+
+class GameSpace:                    #{{{
+    def __init__(self, name, space_type, terrain=None, pop_val=None, econ_val=None, sup=None, ctrl=None, pieces=None):
+        self.name = name
+        self.space_type = space_type  # 'Prov', 'City'
+        self.terrain = terrain
+        self.pop_val = pop_val
+        self.econ_val = econ_val
+        self.support = sup
+        self.ctrl = ctrl
+
+        default_pieces = {
+            "gov": {
+               "troops": [],
+               "police": [],
+               "bases": []
+            },
+            "dir": {
+                "guerrillas": [],
+                "bases": []
+            },
+            "jul": {
+                "guerrillas": [],
+                "bases": []
+            },
+            "syn": {
+                "guerrillas": [],
+                "bases": []
+            }
+        }
+
+        if pieces:
+            for faction, data in pieces.items():
+                default_pieces[faction].update(data)
+        self.pieces = default_pieces
+#def set_starting_pieces(self, starting_data):
+#        for faction, pieces in starting_data.items():
+#            for piece_type, count in pieces.items():
+#                self.pieces[faction][piece_type] = count
+#
+#    game_spaces = {}
+#
+#    for space_name, space_data in starting_pieces.items():
+#        game_space = GameSpace(space_name)
+#        game_space.set_starting_pieces(space_data)
+#        game_spaces[space_name] = game_space
+#}}}
+
+
 class Faction:                      #{{{
-    def __init__(self, faction_id, color, score, income):
+    def __init__(self, faction_id, color, score, res):
         self.id = faction_id
         self.color = color
         self.score = score
-        self.income = income
+        self.res = res
+
 
 class Government(Faction):
-    def __init__(self, faction_id, color, score, income):
-        super().__init__(faction_id, color, score, income)
+    def __init__(self, faction_id, color, score, money):
+        super().__init__(faction_id, color, score, money)
         self.id = "gov"
-        self.color = 'blue'
+        self.color = "blue"
         self.score = 0
-        self.income = 0
+        self.res = 15
+
 
 class Directorio(Faction):
-    def __init__(self, faction_id, color, score, income):
-        super().__init__(faction_id, color, score, income)
-        self.id = "gov"
-        self.color = 'blue'
+    def __init__(self, faction_id, color, score, money):
+        super().__init__(faction_id, color, score, money)
+        self.id = "dir"
+        self.color = "yellow"
         self.score = 0
-        self.income = 0
+        self.res = 5
+
 
 class July26(Faction):
-    def __init__(self, faction_id, color, score, income):
-        super().__init__(faction_id, color, score, income)
-        self.id = "gov"
-        self.color = 'blue'
+    def __init__(self, faction_id, color, score, money):
+        super().__init__(faction_id, color, score, money)
+        self.id = "jul"
+        self.color = "red"
         self.score = 0
-        self.income = 0
+        self.res = 10
+
 
 class Syndicate(Faction):
-    def __init__(self, faction_id, color, score, income):
-        super().__init__(faction_id, color, score, income)
-        self.id = "gov"
-        self.color = 'blue'
+    def __init__(self, faction_id, color, score, money):
+        super().__init__(faction_id, color, score, money)
+        self.id = "syn"
+        self.color = "green"
         self.score = 0
-        self.income = 0
+        self.money = 15
 #}}}
+
 
 class Card:                         #{{{ TODO:
     def __init__(self, id, name):
@@ -131,6 +234,7 @@ class Card:                         #{{{ TODO:
     def execute(self):
         pass
     #}}}
+
 
 class EventCard(Card):              #{{{ TODO:
     def __init__(self, id, name, faction_order, unshaded_txt, unshaded_cap, shaded_txt, shaded_cap):
@@ -143,6 +247,7 @@ class EventCard(Card):              #{{{ TODO:
     def execute(self, faction):
         # TODO: Logic to execute the event based on the faction
         pass
+
 
 # Event Cards Instantiation     #{{{
 event_cards: List[EventCard] = [
@@ -340,12 +445,13 @@ event_cards: List[EventCard] = [
 	),
 ] #}}} }}}
 
+
 class PropagandaCard(Card):         #{{{ TODO:
     def __init__(self, id, name):
         super().__init__(id, name)
     def execute(self):
         # TODO: Logic to conduct a Propaganda Round
-        pass 
+        pass
 #}}} }}}
 
 
